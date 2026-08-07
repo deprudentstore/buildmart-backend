@@ -64,6 +64,10 @@
       "advisories": {
         "block": false
       }
+    },
+    "platform": {
+      "php": "8.2.99",
+      "ext-sodium": "1.0"
     }
   },
   "minimum-stability": "stable",

@@ -11,6 +11,7 @@ RUN apt-get update && apt-get install -y \
     libonig-dev \
     libxml2-dev \
     libcurl4-openssl-dev \
+    libsodium-dev \
     && docker-php-ext-install \
     pdo_mysql \
     mbstring \
@@ -20,6 +21,7 @@ RUN apt-get update && apt-get install -y \
     gd \
     zip \
     opcache \
+    sodium \
     && rm -rf /var/lib/apt/lists/*
 
 # Composer
