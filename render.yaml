@@ -1,0 +1,93 @@
+services:
+  # Laravel API — built from the Dockerfile in this folder
+  - type: web
+    name: buildmart-api
+    runtime: docker
+    dockerfilePath: ./Dockerfile
+    dockerContext: .
+    plan: starter
+    healthCheckPath: /api/categories
+    envVars:
+      - key: APP_NAME
+        value: "BuildMart"
+      - key: APP_ENV
+        value: production
+      - key: APP_DEBUG
+        value: "false"
+      - key: APP_KEY
+        generateValue: true
+      - key: APP_URL
+        fromService:
+          type: web
+          name: buildmart-api
+          property: host
+      - key: DB_CONNECTION
+        value: mysql
+      - key: DB_HOST
+        fromService:
+          type: pserv
+          name: buildmart-mysql
+          property: host
+      - key: DB_PORT
+        value: "3306"
+      - key: DB_DATABASE
+        value: buildmart
+      - key: DB_USERNAME
+        value: laravel_user
+      - key: DB_PASSWORD
+        sync: false
+      - key: SESSION_DRIVER
+        value: file
+      - key: CACHE_STORE
+        value: file
+      - key: QUEUE_CONNECTION
+        value: sync
+      - key: SANCTUM_STATEFUL_DOMAINS
+        value: buildmart.vercel.app,buildmart-admin.vercel.app
+      - key: FRONTEND_URL
+        value: https://buildmart.vercel.app
+      - key: ADMIN_URL
+        value: https://buildmart-admin.vercel.app
+      - key: PAYSTACK_PUBLIC_KEY
+        sync: false
+      - key: PAYSTACK_SECRET_KEY
+        sync: false
+      - key: PAYSTACK_PAYMENT_URL
+        value: https://api.paystack.co
+      - key: FIREBASE_CREDENTIALS
+        value: storage/app/firebase/service-account.json
+      - key: FIREBASE_STORAGE_BUCKET
+        sync: false
+
+  # MySQL 8.4 as a private service (Render's managed DB offering is Postgres-only,
+  # so MySQL runs here as its own Docker service with a persistent disk).
+  - type: pserv
+    name: buildmart-mysql
+    runtime: docker
+    image:
+      url: docker.io/library/mysql:8.4
+    plan: starter
+    disk:
+      name: buildmart-mysql-data
+      mountPath: /var/lib/mysql
+      sizeGB: 5
+    envVars:
+      - key: MYSQL_DATABASE
+        value: buildmart
+      - key: MYSQL_USER
+        value: laravel_user
+      - key: MYSQL_PASSWORD
+        sync: false
+      - key: MYSQL_ROOT_PASSWORD
+        sync: false
+
+# Notes:
+# - MYSQL_PASSWORD and DB_PASSWORD must be set to the SAME value manually in the
+#   Render dashboard (sync: false means Render won't auto-fill it for you).
+# - Render's mysql:8.4 image defaults to caching_sha2_password, not the
+#   mysql_native_password this project's setup_db.sh forces for Termux/PDO —
+#   that workaround is Termux-only and isn't needed on Render's own network.
+# - Set PAYSTACK_SECRET_KEY, PAYSTACK_PUBLIC_KEY, FIREBASE_STORAGE_BUCKET,
+#   and MYSQL_ROOT_PASSWORD in the Render dashboard after first deploy.
+# - Point the Paystack webhook at:
+#   https://buildmart-api.onrender.com/api/webhooks/paystack
